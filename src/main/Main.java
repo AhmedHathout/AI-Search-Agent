@@ -4,8 +4,6 @@ import main.entities.*;
 
 import java.util.*;
 
-// TODO Iron Man can be in the same cell that thanos in even when
-//  he does not have all the infinity stones. Not sure if that is OK
 public class Main {
 
     // This is a hack to count the number of nodes the search method returns just the node
@@ -13,12 +11,18 @@ public class Main {
 
     public static void main(String[] args) {
         String solutionString = solve("5,5;1,2;3,1;0,2,1,1,2,1,2,2,4,0,4,1;0,3,3,0,3,2,3,4,4,3",
-                "UC", true) + ";" + numberOfExpandedNodes;
+                "DF", true) + ";" + numberOfExpandedNodes;
         System.out.println(solutionString);
+
+        String solutionString2 = solve("7,7;1,2;3,1;0,2,1,1,2,1,2,2,4,0,4,1;0,3,3,0,3,2,3,4,4,3,5,5,6,4,2,6",
+                "DF", true) + ";" + numberOfExpandedNodes;
+        System.out.println(solutionString2);
     }
 
     public static String solve(String grid, String strategy, boolean visualise) {
 
+        // This is just in case 2 different examples are run at the same time.
+        numberOfExpandedNodes = 0;
         EndGame endGame = parseGridInput(grid);
         SearchTreeNode solution = genericSearchProcedure(endGame, strategy);
 
@@ -41,45 +45,82 @@ public class Main {
 
         PriorityQueue<SearchTreeNode> nodeQueue;
 
-        // Not sure when to return a positive or negative number.
+        int maximumDepthForIterativeDeepening = -1;
+
         switch (strategy) {
             case "BF":
-                nodeQueue = new PriorityQueue<>((node1, node2) -> 1);
+                nodeQueue = new PriorityQueue<>((node1, node2) -> node1.getCurrentDepth() - node2.getCurrentDepth());
                 break;
             case "DF":
-                nodeQueue = new PriorityQueue<>((node1, node2) -> -1);
+                nodeQueue = new PriorityQueue<>((node1, node2) -> node2.getCurrentDepth() - node1.getCurrentDepth());
                 break;
             case "UC":
                 nodeQueue = new PriorityQueue<SearchTreeNode>((node1, node2) -> {
                     return node1.getCostFromRoot() - node2.getCostFromRoot();
                 });
                 break;
+            case "ID":
+                nodeQueue = new PriorityQueue<>((node1, node2) -> node2.getCurrentDepth() - node1.getCurrentDepth());
+                maximumDepthForIterativeDeepening = 0;
+                break;
+            case "GR":
+                nodeQueue = new PriorityQueue<SearchTreeNode>((node1, node2) -> {
+                    return node1.heuristics() - node2.heuristics();
+                });
+                break;
+            case "AS":
+                nodeQueue = new PriorityQueue<SearchTreeNode>((node1, node2) -> {
+                    return node1.AS() - node2.AS();
+                });
+                break;
+
             default:
                 throw new AssertionError("Unknow strategy: " + strategy);
         }
 
-        nodeQueue.add(new SearchTreeNode(problem.getInitialState(),
-                null, null, 0));
+        SearchTreeNode root = new SearchTreeNode(problem.getInitialState(),
+                null, null, 0);
 
-        Set<State> alreadyVisitedStates = new HashSet<>();
+        // This while loop is for iterative deepening
         while (true) {
-            // If there are no nodes in the queue then there is no solution
-            if (nodeQueue.isEmpty()) {
-                return null;
+
+            nodeQueue.add(root);
+            Set<State> alreadyVisitedStates = new HashSet<>();
+            while (true) {
+                // If there are no nodes in the queue then there is no solution
+                if (nodeQueue.isEmpty()) {
+                    if (strategy.equals("ID")) {
+                        break;
+                    }
+
+                    return null;
+                }
+
+                SearchTreeNode currentNode = nodeQueue.remove();
+
+                // If the damage taken is more than 100, discard the node.
+                if (currentNode.getCostFromRoot() >= 100) {
+                    continue;
+                }
+
+                if (problem.goalTest(currentNode.getCurrentState())) {
+                    return currentNode;
+                }
+
+                if (!alreadyVisitedStates.contains(currentNode.getCurrentState())) {
+                    alreadyVisitedStates.add(currentNode.getCurrentState());
+
+                    if (!strategy.equals("ID") ||
+                            currentNode.getCurrentDepth() < maximumDepthForIterativeDeepening) {
+
+                        List<SearchTreeNode> newNodes = problem.expand(currentNode);
+                        numberOfExpandedNodes++;
+                        nodeQueue.addAll(newNodes);
+                    }
+                }
             }
 
-            SearchTreeNode currentNode = nodeQueue.remove();
-
-            if (problem.goalTest(currentNode.getCurrentState())) {
-                return currentNode;
-            }
-
-            if (!alreadyVisitedStates.contains(currentNode.getCurrentState())) {
-                alreadyVisitedStates.add(currentNode.getCurrentState());
-                List<SearchTreeNode> newNodes = problem.expand(currentNode);
-                numberOfExpandedNodes++;
-                nodeQueue.addAll(newNodes);
-            }
+            maximumDepthForIterativeDeepening++;
         }
     }
 
@@ -152,7 +193,7 @@ public class Main {
             }
         }
 
-        String visualizeString = action + "\n";
+        String visualizeString = action + " " + node.getCostFromRoot() + "\n";
         for (String[] row : grid) {
             for (String cell : row) {
                 if (cell == "") {

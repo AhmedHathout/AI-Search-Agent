@@ -18,17 +18,16 @@ public class EndGame extends GenericSearchProblem {
         // Had to create everything in super() because it must be the first
         // line in the constructor
         super(new HashSet<>(),
-              new State(ironMan, infinityStoneSet, warriorSet, false),
-              /* totalCost */ 0);
+              new State(ironMan, infinityStoneSet, warriorSet, false));
 
 
-        actionSet.add(new Action("up", 0));
-        actionSet.add(new Action("down", 0));
-        actionSet.add(new Action("left", 0));
-        actionSet.add(new Action("right", 0));
-        actionSet.add(new Action("collect", 3));
-        actionSet.add(new Action("kill", 2));
-        actionSet.add(new Action("snap", 0));
+        getActionSet().add(new Action("up", 0));
+        getActionSet().add(new Action("down", 0));
+        getActionSet().add(new Action("left", 0));
+        getActionSet().add(new Action("right", 0));
+        getActionSet().add(new Action("collect", 3));
+        getActionSet().add(new Action("kill", 2));
+        getActionSet().add(new Action("snap", 0));
 
         this.thanos = thanos;
 
@@ -50,7 +49,6 @@ public class EndGame extends GenericSearchProblem {
                 .stream()
                 .noneMatch(infinityStone -> infinityStone.equals(ironMan))) {
 
-            // Did not handle occupied cell by enemies since I am not sure if Iron Man can not be on the same cell or not.
             if (ironMan.getY() < getGridWidth() - 1) {
                 State newState = new State(ironMan.moveRight(),
                         infinityStoneSet,
@@ -62,7 +60,9 @@ public class EndGame extends GenericSearchProblem {
 
                 newNode.setCostFromRoot(computeTotalCost(newNode));
 
-                newNodeList.add(newNode);
+                if (permissibleCell(newNode)) {
+                    newNodeList.add(newNode);
+                }
             }
 
             if (ironMan.getY() > 0) {
@@ -76,7 +76,9 @@ public class EndGame extends GenericSearchProblem {
 
                 newNode.setCostFromRoot(computeTotalCost(newNode));
 
-                newNodeList.add(newNode);
+                if (permissibleCell(newNode)) {
+                    newNodeList.add(newNode);
+                }
             }
 
             if (ironMan.getX() < getGridLength() - 1) {
@@ -90,7 +92,9 @@ public class EndGame extends GenericSearchProblem {
 
                 newNode.setCostFromRoot(computeTotalCost(newNode));
 
-                newNodeList.add(newNode);
+                if (permissibleCell(newNode)) {
+                    newNodeList.add(newNode);
+                }
             }
 
             if (ironMan.getX() > 0) {
@@ -104,7 +108,9 @@ public class EndGame extends GenericSearchProblem {
 
                 newNode.setCostFromRoot(computeTotalCost(newNode));
 
-                newNodeList.add(newNode);
+                if (permissibleCell(newNode)) {
+                    newNodeList.add(newNode);
+                }
             }
         }
 
@@ -183,9 +189,20 @@ public class EndGame extends GenericSearchProblem {
         return previousCost + lastAction.getCost() + damageTakenFromEnemies(newNode);
     }
 
-    private boolean cellContainsWarriorOrThanos(Location cell, SearchTreeNode currentNode) {
-        return cell.equals(this.getThanos()) ||
-                currentNode.getCurrentState().getWarriorSet().contains(cell);
+    /**
+     * Checks whether Iron Man can be in this cell or not. Iron Man can not be in the same
+     * cell a warrior is in. He can be in the same cell with thanos only if he collected
+     * all the infinity stones.
+     *
+     * @param node The new node that resutled from the expansion of the current node.
+     * @return true if Iron Man can be in that cell, false otherwise
+     */
+    private boolean permissibleCell(SearchTreeNode node) {
+        Location ironMan = node.getCurrentState().getIronMan();
+        return (node.getCurrentState().getWarriorSet()
+                                        .stream()
+                                        .noneMatch(warrior -> warrior.equals(ironMan)) &&
+                (!ironMan.equals(this.getThanos()) || node.getCurrentState().getInfinityStoneSet().size() == 0));
     }
 
     private Action getActionByName(String name) {
@@ -240,7 +257,8 @@ public class EndGame extends GenericSearchProblem {
         if ((ironMan.getX() + 1 == getThanos().getX() && ironMan.getY() == getThanos().getY()) ||
             (ironMan.getX() - 1 == getThanos().getX() && ironMan.getY() == getThanos().getY()) ||
             (ironMan.getY() + 1 == getThanos().getY() && ironMan.getX() == getThanos().getX()) ||
-            (ironMan.getY() - 1 == getThanos().getY() && ironMan.getX() == getThanos().getX())) {
+            (ironMan.getY() - 1 == getThanos().getY() && ironMan.getX() == getThanos().getX()) ||
+            (ironMan.getY() == getThanos().getY() && ironMan.getX() == getThanos().getX())){
 
             damageTakenFromCurrentCell += 5;
         }

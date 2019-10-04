@@ -20,6 +20,22 @@ public class SearchTreeNode {
         this.costFromRoot = 0;
     }
 
+    /**
+     * Calculates a rough estimate of the cost from this node to the goal.
+     * To be admissible, it returns the minimum remaining damage that is to be taken.
+     * That is, the number of the remaining stones * the damage taken to collect the stone
+     * plus the damage taken from Thanos before the snap action
+     */
+    public int heuristics() {
+        return getCurrentState().getInfinityStoneSet().size() * 3 + 5;
+    }
+
+    /**
+     * @return the heuristic value plus the cost from the root
+     */
+    public int AS() {
+        return heuristics() + getCostFromRoot();
+    }
     public State getCurrentState() {
         return currentState;
     }
