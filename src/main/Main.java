@@ -6,16 +6,16 @@ import java.util.*;
 
 public class Main {
 
-    // This is a hack to count the number of nodes the search method returns just the node
+    // This is a hack :-) to count the number of nodes the search method returns just the node
     private static int numberOfExpandedNodes = 0;
 
     public static void main(String[] args) {
         String solutionString = solve("5,5;1,2;3,1;0,2,1,1,2,1,2,2,4,0,4,1;0,3,3,0,3,2,3,4,4,3",
-                "DF", true) + ";" + numberOfExpandedNodes;
+                "AS1", true) + ";" + numberOfExpandedNodes;
         System.out.println(solutionString);
 
         String solutionString2 = solve("7,7;1,2;3,1;0,2,1,1,2,1,2,2,4,0,4,1;0,3,3,0,3,2,3,4,4,3,5,5,6,4,2,6",
-                "DF", true) + ";" + numberOfExpandedNodes;
+                "AS2", false) + ";" + numberOfExpandedNodes;
         System.out.println(solutionString2);
     }
 
@@ -30,7 +30,7 @@ public class Main {
             return "There is no solution";
         }
 
-        String solutionString = getActionSequence(solution) + ";" + solution.getCostFromRoot();
+        String solutionString = getActionSequence(solution).replaceFirst(",", "") + ";" + solution.getCostFromRoot();
 
         if (visualise) {
             solutionString = visualizeSolution(endGame, solution) + solutionString;
@@ -63,14 +63,25 @@ public class Main {
                 nodeQueue = new PriorityQueue<>((node1, node2) -> node2.getCurrentDepth() - node1.getCurrentDepth());
                 maximumDepthForIterativeDeepening = 0;
                 break;
-            case "GR":
+            case "GR1":
                 nodeQueue = new PriorityQueue<SearchTreeNode>((node1, node2) -> {
-                    return node1.heuristics() - node2.heuristics();
+                    return node1.heuristic(1) - node2.heuristic(1);
                 });
                 break;
-            case "AS":
+            case "GR2":
                 nodeQueue = new PriorityQueue<SearchTreeNode>((node1, node2) -> {
-                    return node1.AS() - node2.AS();
+                    return node1.heuristic(2) - node2.heuristic(2);
+                });
+                break;
+
+            case "AS1":
+                nodeQueue = new PriorityQueue<SearchTreeNode>((node1, node2) -> {
+                    return node1.AStarEvaluation(1) - node2.AStarEvaluation(1);
+                });
+                break;
+            case "AS2":
+                nodeQueue = new PriorityQueue<SearchTreeNode>((node1, node2) -> {
+                    return node1.AStarEvaluation(2) - node2.AStarEvaluation(2);
                 });
                 break;
 
