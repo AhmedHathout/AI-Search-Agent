@@ -17,6 +17,9 @@ public class Main {
         String solutionString2 = solve("7,7;1,2;3,1;0,2,1,1,2,1,2,2,4,0,4,1;0,3,3,0,3,2,3,4,4,3,5,5,6,4,2,6",
                 "AS2", false) + ";" + numberOfExpandedNodes;
         System.out.println(solutionString2);
+        String solutionString3 = solve("7,7;3,5;1,2;2,3,1,5,3,6,2,6,4,0,4,1;3,4,2,5,4,6,2,6,2,1,5,5,6,4,2,4",
+                "GR2", true);
+        System.out.println(solutionString3);
     }
 
     public static String solve(String grid, String strategy, boolean visualise) {
@@ -36,7 +39,7 @@ public class Main {
             solutionString = visualizeSolution(endGame, solution) + solutionString;
         }
 
-        return solutionString;
+        return solutionString + ";" + numberOfExpandedNodes;
     }
 
     private static SearchTreeNode genericSearchProcedure(GenericSearchProblem problem,
@@ -140,8 +143,8 @@ public class Main {
         String[] splitGrid = grid.split(";");
 
         String[] gridDimensions = splitGrid[0].split(",");
-        int gridWidth = Integer.parseInt(gridDimensions[0]);
-        int gridLength = Integer.parseInt(gridDimensions[1]);
+        int gridLength = Integer.parseInt(gridDimensions[0]);
+        int gridWidth = Integer.parseInt(gridDimensions[1]);
 
         String[] ironManLocationString = splitGrid[1].split(",");
         Location ironMan = new Location(Integer.parseInt(ironManLocationString[0]),
